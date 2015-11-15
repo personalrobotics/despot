@@ -282,7 +282,7 @@ double POMCP::Simulate(State* particle, RandomStreams& streams, VNode* vnode,
 		streams.Advance();
 		map<OBS_TYPE, VNode*>& vnodes = qnode->children();
 		if (vnodes[obs] != NULL) {
-			reward += Discount()
+			reward += Globals::Discount()
 				* Simulate(particle, streams, vnodes[obs], model, prior);
 		} else { // Rollout upon encountering a node not in curren tree, then add the node
 			reward += Rollout(particle, streams, vnode->depth() + 1, model,
@@ -320,12 +320,12 @@ double POMCP::Simulate(State* particle, VNode* vnode, const DSPOMDP* model,
 		prior->Add(action, obs);
 		map<OBS_TYPE, VNode*>& vnodes = qnode->children();
 		if (vnodes[obs] != NULL) {
-			reward += Discount()
+			reward += Globals::Discount()
 				* Simulate(particle, vnodes[obs], model, prior);
 		} else { // Rollout upon encountering a node not in curren tree, then add the node
 			vnodes[obs] = CreateVNode(vnode->depth() + 1, particle, prior,
 				model);
-			reward += Discount()
+			reward += Globals::Discount()
 				* Rollout(particle, vnode->depth() + 1, model, prior);
 		}
 		prior->PopLast();
@@ -356,7 +356,7 @@ double POMCP::Rollout(State* particle, RandomStreams& streams, int depth,
 	if (!terminal) {
 		prior->Add(action, obs);
 		streams.Advance();
-		reward += Discount()
+		reward += Globals::Discount()
 			* Rollout(particle, streams, depth + 1, model, prior);
 		streams.Back();
 		prior->PopLast();
@@ -379,7 +379,7 @@ double POMCP::Rollout(State* particle, int depth, const DSPOMDP* model,
 	bool terminal = model->Step(*particle, action, reward, obs);
 	if (!terminal) {
 		prior->Add(action, obs);
-		reward += Discount() * Rollout(particle, depth + 1, model, prior);
+		reward += Globals::Discount() * Rollout(particle, depth + 1, model, prior);
 		prior->PopLast();
 	}
 
@@ -413,7 +413,7 @@ ValuedAction POMCP::Evaluate(VNode* root, vector<State*>& particles,
 				action, reward, obs);
 
 			val += discount * reward;
-			discount *= Discount();
+			discount *= Globals::Discount();
 
 			if (!terminal) {
 				prior->Add(action, obs);
