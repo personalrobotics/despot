@@ -1,6 +1,7 @@
 #include <despot/simple_tui.h>
 
 using namespace std;
+using namespace despot;
 
 void disableBufferedIO(void) {
   setbuf(stdout, NULL);

@@ -2,6 +2,7 @@
 #include <despot/util/logging.h>
 
 using namespace std;
+using namespace despot;
 
 /* =============================================================================
  * POMCPPrior class

@@ -6,6 +6,7 @@
 #include <despot/core/pomdp.h>
 
 using namespace std;
+using namespace despot;
 
 Parser::Parser(const Parser&) {
 }

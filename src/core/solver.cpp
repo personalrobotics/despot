@@ -4,6 +4,7 @@
 #include <despot/core/belief.h>
 
 using namespace std;
+using namespace despot;
 
 /* =============================================================================
  * SearchStatistics class

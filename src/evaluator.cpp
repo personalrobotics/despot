@@ -1,6 +1,7 @@
 #include <despot/evaluator.h>
 
 using namespace std;
+using namespace despot;
 
 /* =============================================================================
  * EvalLog class

@@ -1,6 +1,7 @@
 #include <despot/util/seeds.h>
 
 using namespace std;
+using namespace despot;
 
 int Seeds::num_assigned_seeds_ = 0;
 unsigned Seeds::root_seed_ = 0;

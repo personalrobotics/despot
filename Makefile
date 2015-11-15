@@ -8,7 +8,7 @@ DEPDIR = .deps
 ##### Compiler/linker options
 
 INCL = -I $(INCDIR) -I $(SRCDIR)
-CXX = g++
+CXX = clang++-3.7
 CXXFLAGS = -O3 -c -Wall -Wno-sign-compare -fpic $(INCL) $(GPROF)
 #LDFLAGS = -O3 -Wno-sign-compare -shared
 LDFLAGS = -O3 -Wno-sign-compare -dynamiclib $(GPROF)

@@ -2,6 +2,7 @@
 // #include <thread>
 
 using namespace std;
+using namespace despot;
 
 const string logging::markers_[] = { "NONE", "ERROR", "WARN", "INFO", "DEBUG",
 	"VERBOSE" };

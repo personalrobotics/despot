@@ -3,6 +3,7 @@
 #include <vector>
 
 using namespace std;
+using namespace despot;
 
 RandomStreams::RandomStreams(int num_streams, int length) :
 	position_(0) {

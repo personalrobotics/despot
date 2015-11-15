@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 using namespace std;
+using namespace despot;
 
 /* =============================================================================
  * Policy class

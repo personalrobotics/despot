@@ -1,6 +1,7 @@
 #include <despot/core/globals.h>
 
 using namespace std;
+using namespace despot;
 
 namespace Globals {
 Config config;

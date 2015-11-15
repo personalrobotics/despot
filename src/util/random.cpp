@@ -4,6 +4,7 @@
 #include <math.h>
 
 using namespace std;
+using namespace despot;
 
 Random Random::RANDOM((unsigned) 0);
 

@@ -4,6 +4,7 @@
 #include <despot/solver/pomcp.h>
 
 using namespace std;
+using namespace despot;
 
 /* =============================================================================
  * ValuedAction class

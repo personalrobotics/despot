@@ -1,6 +1,7 @@
 #include <despot/test/util_test.h>
 
 using namespace std;
+using namespace despot;
 
 void TestSortByValue() {
 	map<string, double> map;

@@ -2,6 +2,7 @@
 #include <queue>
 
 using namespace std;
+using namespace despot;
 
 int Floor::INVALID = -1;
 

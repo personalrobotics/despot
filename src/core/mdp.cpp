@@ -1,6 +1,7 @@
 #include <despot/core/mdp.h>
 
 using namespace std;
+using namespace despot;
 
 MDP::~MDP() {
 }

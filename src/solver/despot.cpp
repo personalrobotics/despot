@@ -2,6 +2,7 @@
 #include <despot/solver/pomcp.h>
 
 using namespace std;
+using namespace despot;
 
 DESPOT::DESPOT(const DSPOMDP* model, ScenarioLowerBound* lb, ScenarioUpperBound* ub, Belief* belief) :
 	Solver(model, belief),

@@ -2,6 +2,7 @@
 #include <despot/solver/despot.h>
 
 using namespace std;
+using namespace despot;
 
 /* =============================================================================
  * VNode class
