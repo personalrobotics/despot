@@ -1,6 +1,8 @@
 #include <despot/solver/despot.h>
 #include <despot/solver/pomcp.h>
 
+using namespace std;
+
 DESPOT::DESPOT(const DSPOMDP* model, ScenarioLowerBound* lb, ScenarioUpperBound* ub, Belief* belief) :
 	Solver(model, belief),
 	root_(NULL), 

@@ -3,6 +3,8 @@
 #include <despot/core/node.h>
 #include <despot/solver/pomcp.h>
 
+using namespace std;
+
 /* =============================================================================
  * ValuedAction class
  * =============================================================================*/

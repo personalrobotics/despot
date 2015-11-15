@@ -2,6 +2,7 @@
 #include <despot/core/pomdp.h>
 #include <despot/core/mdp.h>
 
+using namespace std;
 
 /* =============================================================================
  * ScenarioUpperBound

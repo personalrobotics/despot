@@ -1,6 +1,7 @@
 #include <despot/solver/pomcp.h>
 #include <despot/util/logging.h>
 
+using namespace std;
 
 /* =============================================================================
  * POMCPPrior class
