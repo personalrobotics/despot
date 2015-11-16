@@ -3,7 +3,8 @@
 #include <vector>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 RandomStreams::RandomStreams(int num_streams, int length) :
 	position_(0) {
@@ -62,3 +63,5 @@ ostream& operator<<(ostream& os, const RandomStreams& stream) {
 	}
 	return os;
 }
+
+} // namespace despot

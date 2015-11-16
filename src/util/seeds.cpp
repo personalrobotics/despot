@@ -1,7 +1,8 @@
 #include <despot/util/seeds.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 int Seeds::num_assigned_seeds_ = 0;
 unsigned Seeds::root_seed_ = 0;
@@ -23,3 +24,5 @@ vector<unsigned> Seeds::Next(int n) {
 		seeds.push_back(Next());
 	return seeds;
 }
+
+} // namespace despot

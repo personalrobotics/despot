@@ -1,7 +1,8 @@
 #include <despot/simple_tui.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 void disableBufferedIO(void) {
   setbuf(stdout, NULL);
@@ -378,3 +379,5 @@ int SimpleTUI::run(int argc, char *argv[]) {
 
   return 0;
 }
+
+} // namespace despot

@@ -3,7 +3,8 @@
 #include <unistd.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * Policy class
@@ -247,3 +248,5 @@ int MMAPStatePolicy::Action(const vector<State*>& particles,
 	RandomStreams& streams, History& history) const {
 	return policy_.GetAction(*inferencer_.GetMMAP(particles));
 }
+
+} // namespace despot

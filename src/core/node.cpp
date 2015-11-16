@@ -2,7 +2,8 @@
 #include <despot/solver/despot.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * VNode class
@@ -373,3 +374,5 @@ void QNode::value(double v) {
 double QNode::value() const {
 	return value_;
 }
+
+} // namespace despot

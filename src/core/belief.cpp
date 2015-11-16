@@ -2,7 +2,8 @@
 #include <despot/core/pomdp.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * ParticleBelief class
@@ -427,3 +428,5 @@ string ParticleBelief::text() const {
 	}
 	return oss.str();
 }
+
+} // namespace despot

@@ -1,7 +1,8 @@
 #include <despot/util/dirichlet.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 Dirichlet::Dirichlet(vector<double> alpha) {
 	alpha_ = alpha;
@@ -27,3 +28,5 @@ vector<double> Dirichlet::Next(vector<double> alpha) {
 		x[i] = x[i] / sum;
 	return x;
 }
+
+} // namespace despot

@@ -2,7 +2,8 @@
 #include <stdexcept>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * Function class
@@ -227,8 +228,6 @@ double Function::ComputeConstrainedMinimum(const NamedVar* var,
 	return min;
 }
 
-namespace despot {
-
 ostream& operator<<(ostream& os, const Function& func) {
 	os << "Vars: [";
 	for (int i = 0; i < func.parents_.size(); i++) {
@@ -271,8 +270,6 @@ ostream& operator<<(ostream& os, const Function& func) {
 	}
 	return os;
 }
-
-} // namespace despot
 
 /* =============================================================================
  * CPT class
@@ -508,8 +505,6 @@ CPT* HierarchyCPT::CreateNoisyVariant(double noise) const {
 			noise));
 	return hcpt;
 }
-
-namespace despot {
 
 ostream& operator<<(std::ostream& os, const HierarchyCPT& hcpt) {
 	os << "Root variable: " << hcpt.parents_[0]->name() << endl;

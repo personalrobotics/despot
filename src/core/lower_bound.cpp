@@ -4,7 +4,8 @@
 #include <despot/solver/pomcp.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * ValuedAction class
@@ -143,3 +144,5 @@ ValuedAction TrivialBeliefLowerBound::Value(const Belief* belief) const {
 	va.value *= 1.0 / (1 - Globals::Discount());
 	return va;
 }
+
+} // namespace despot

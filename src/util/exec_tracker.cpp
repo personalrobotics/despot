@@ -1,7 +1,8 @@
 #include <despot/util/exec_tracker.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 ExecTracker::ExecTracker() {
 }
@@ -32,3 +33,5 @@ void ExecTracker::PrintLocs(ostream& out) const {
 		out << " (" << loc->first << ", " << loc->second << ")";
 	out << endl;
 }
+
+} // namespace despot

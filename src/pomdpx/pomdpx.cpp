@@ -2,7 +2,8 @@
 #include <despot/solver/pomcp.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * POMDPXState class
@@ -410,8 +411,6 @@ void POMDPX::PrintDefaultActions() {
 	}
 }
 
-namespace despot {
-
 class POMDPXGreedyActionPolicy: public Policy {
 private:
 	const POMDPX* pomdpx_model_;
@@ -442,8 +441,6 @@ public:
 		return bestAction;
 	}
 };
-
-} // namespace despot
 
 ScenarioLowerBound* POMDPX::CreateScenarioLowerBound(string name,
 	string particle_bound_name) const {
@@ -591,3 +588,5 @@ DSPOMDP* POMDPX::MakeCopy() const {
 
 	return pomdpx;
 }
+
+} // namespace despot

@@ -1,7 +1,8 @@
 #include <despot/core/mdp.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 MDP::~MDP() {
 }
@@ -130,3 +131,5 @@ double MDP::ComputeActionValue(const ParticleBelief* belief,
 const vector<ValuedAction>& MDP::policy() const {
 	return policy_;
 }
+
+} // namespace despot

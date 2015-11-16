@@ -1,7 +1,8 @@
 #include <despot/test/util_test.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 void TestSortByValue() {
 	map<string, double> map;
@@ -26,3 +27,5 @@ void TestSortByKey() {
 	vector<pair<string, double> > v = SortByKey(map);
 	cout << v << endl;
 }
+
+} // namespace despot

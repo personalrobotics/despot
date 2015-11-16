@@ -3,7 +3,8 @@
 #include <despot/core/mdp.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * ScenarioUpperBound
@@ -169,3 +170,5 @@ double MDPUpperBound::Value(const Belief* belief) const {
 	}
 	return value;
 }
+
+} // namespace despot

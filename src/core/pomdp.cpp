@@ -5,7 +5,8 @@
 #include <despot/solver/pomcp.h>
 
 using namespace std;
-using namespace despot;
+
+namespace despot {
 
 /* =============================================================================
  * State class
@@ -167,3 +168,5 @@ BeliefUpperBound* BeliefMDP::CreateBeliefUpperBound(string name) const {
 		return NULL;
 	}
 }
+
+} // namespace despot
