@@ -235,7 +235,9 @@ void VNode::PrintTree(int depth, ostream& os) {
 
 	os << "(" << "d:" << this->default_move().value <<
 		" l:" << this->lower_bound() << ", u:" << this->upper_bound()
-		<< ", w:" << this->Weight() << ", weu:" << DESPOT::WEU(this)
+		<< ", w:" << this->Weight()
+    // TODO: This requires a Config.
+    // << ", weu:" << DESPOT::WEU(this)
 		<< ")"
 		<< endl;
 

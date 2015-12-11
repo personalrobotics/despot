@@ -15,6 +15,7 @@ class DESPOT: public Solver {
 friend class VNode;
 
 protected:
+  Config& config_;
 	VNode* root_;
 	SearchStatistics statistics_;
 
@@ -36,48 +37,50 @@ public:
 	static VNode* ConstructTree(std::vector<State*>& particles, RandomStreams& streams,
 		ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
 		const DSPOMDP* model, History& history, double timeout,
-		SearchStatistics* statistics = NULL);
+    const Config& config, SearchStatistics* statistics = NULL);
 
 protected:
 	static VNode* Trial(VNode* root, RandomStreams& streams,
 		ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
-		const DSPOMDP* model, History& history, SearchStatistics* statistics =
-			NULL);
+		const DSPOMDP* model, History& history, const Config& config,
+    SearchStatistics* statistics = NULL);
 	static void InitLowerBound(VNode* vnode, ScenarioLowerBound* lower_bound,
-		RandomStreams& streams, History& history);
+		RandomStreams& streams, History& history, const Config& config);
 	static void InitUpperBound(VNode* vnode, ScenarioUpperBound* upper_bound,
-		RandomStreams& streams, History& history);
+		RandomStreams& streams, History& history, const Config& config);
 	static void InitBounds(VNode* vnode, ScenarioLowerBound* lower_bound,
-		ScenarioUpperBound* upper_bound, RandomStreams& streams, History& history);
+		ScenarioUpperBound* upper_bound, RandomStreams& streams, History& history,
+    const Config& config);
 
 	static void Expand(VNode* vnode,
 		ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
-		const DSPOMDP* model, RandomStreams& streams, History& history);
-	static void Backup(VNode* vnode);
+		const DSPOMDP* model, RandomStreams& streams, History& history,
+    const Config& config);
+	static void Backup(VNode* vnode, const Config& config);
 
 	static double Gap(VNode* vnode);
 
-	double CheckDESPOT(const VNode* vnode, double regularized_value);
-	double CheckDESPOTSTAR(const VNode* vnode, double regularized_value);
+	double CheckDESPOT(const VNode* vnode, double regularized_value, const Config& config);
+	double CheckDESPOTSTAR(const VNode* vnode, double regularized_value, const Config& config);
 	void Compare();
 
-	static void ExploitBlockers(VNode* vnode);
-	static VNode* FindBlocker(VNode* vnode);
+	static void ExploitBlockers(VNode* vnode, const Config& config);
+	static VNode* FindBlocker(VNode* vnode, const Config& config);
 	static void Expand(QNode* qnode, ScenarioLowerBound* lower_bound,
 		ScenarioUpperBound* upper_bound, const DSPOMDP* model,
-		RandomStreams& streams, History& history);
+		RandomStreams& streams, History& history, const Config& config);
 	static void Update(VNode* vnode);
-	static void Update(QNode* qnode);
-	static VNode* Prune(VNode* vnode, int& pruned_action, double& pruned_value);
-	static QNode* Prune(QNode* qnode, double& pruned_value);
-	static double WEU(VNode* vnode);
+	static void Update(QNode* qnode, const Config& config);
+	static VNode* Prune(VNode* vnode, int& pruned_action, double& pruned_value, const Config& config);
+	static QNode* Prune(QNode* qnode, double& pruned_value, const Config& config);
+	static double WEU(VNode* vnode, const Config& config);
 	static double WEU(VNode* vnode, double epsilon);
-	static VNode* SelectBestWEUNode(QNode* qnode);
+	static VNode* SelectBestWEUNode(QNode* qnode, const Config& config);
 	static QNode* SelectBestUpperBoundNode(VNode* vnode);
 	static ValuedAction OptimalAction(VNode* vnode);
 
 	static ValuedAction Evaluate(VNode* root, std::vector<State*>& particles,
-		RandomStreams& streams, POMCPPrior* prior, const DSPOMDP* model);
+		RandomStreams& streams, POMCPPrior* prior, const DSPOMDP* model, const Config& config);
 };
 
 } // namespace despot

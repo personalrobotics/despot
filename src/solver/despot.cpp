@@ -7,6 +7,7 @@ namespace despot {
 
 DESPOT::DESPOT(const DSPOMDP* model, ScenarioLowerBound* lb, ScenarioUpperBound* ub, Belief* belief) :
 	Solver(model, belief),
+  config_(Globals::config),
 	root_(NULL), 
 	lower_bound_(lb),
 	upper_bound_(ub) {
@@ -26,7 +27,8 @@ ScenarioUpperBound* DESPOT::upper_bound() const {
 
 VNode* DESPOT::Trial(VNode* root, RandomStreams& streams,
 	ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
-	const DSPOMDP* model, History& history, SearchStatistics* statistics) {
+	const DSPOMDP* model, History& history, const Config& config,
+  SearchStatistics* statistics) {
 	VNode* cur = root;
 
 	int hist_size = history.Size();
@@ -37,7 +39,7 @@ VNode* DESPOT::Trial(VNode* root, RandomStreams& streams,
 			statistics->longest_trial_length = cur->depth();
 		}
 
-		ExploitBlockers(cur);
+		ExploitBlockers(cur, config);
 
 		if (Gap(cur) == 0) {
 			break;
@@ -45,7 +47,7 @@ VNode* DESPOT::Trial(VNode* root, RandomStreams& streams,
 
 		if (cur->IsLeaf()) {
 			double start = clock();
-			Expand(cur, lower_bound, upper_bound, model, streams, history);
+			Expand(cur, lower_bound, upper_bound, model, streams, history, config);
 
 			if (statistics != NULL) {
 				statistics->time_node_expansion += (double) (clock() - start)
@@ -57,7 +59,7 @@ VNode* DESPOT::Trial(VNode* root, RandomStreams& streams,
 
 		double start = clock();
 		QNode* qstar = SelectBestUpperBoundNode(cur);
-		VNode* next = SelectBestWEUNode(qstar);
+		VNode* next = SelectBestWEUNode(qstar, config);
 
 		if (statistics != NULL) {
 			statistics->time_path += (clock() - start) / CLOCKS_PER_SEC;
@@ -69,21 +71,21 @@ VNode* DESPOT::Trial(VNode* root, RandomStreams& streams,
 
 		cur = next;
 		history.Add(qstar->edge(), cur->edge());
-	} while (cur->depth() < Globals::config.search_depth && WEU(cur) > 0);
+	} while (cur->depth() < config.search_depth && WEU(cur, config) > 0);
 
 	history.Truncate(hist_size);
 
 	return cur;
 }
 
-void DESPOT::ExploitBlockers(VNode* vnode) {
-	if (Globals::config.pruning_constant <= 0) {
+void DESPOT::ExploitBlockers(VNode* vnode, const Config& config) {
+	if (config.pruning_constant <= 0) {
 		return;
 	}
 
 	VNode* cur = vnode;
 	while (cur != NULL) {
-		VNode* blocker = FindBlocker(cur);
+		VNode* blocker = FindBlocker(cur, config);
 
 		if (blocker != NULL) {
 			if (cur->parent() == NULL || blocker == cur) {
@@ -104,7 +106,7 @@ void DESPOT::ExploitBlockers(VNode* vnode) {
 				}
 			}
 
-			Backup(cur);
+			Backup(cur, config);
 
 			if (cur->parent() == NULL) {
 				cur = NULL;
@@ -120,7 +122,7 @@ void DESPOT::ExploitBlockers(VNode* vnode) {
 VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 	ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
 	const DSPOMDP* model, History& history, double timeout,
-	SearchStatistics* statistics) {
+	const Config& config, SearchStatistics* statistics) {
 	if (statistics != NULL) {
 		statistics->num_particles_before_search = model->NumActiveParticles();
 	}
@@ -133,7 +135,7 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 
 	logd
 		<< "[DESPOT::ConstructTree] START - Initializing lower and upper bounds at the root node.";
-	InitBounds(root, lower_bound, upper_bound, streams, history);
+	InitBounds(root, lower_bound, upper_bound, streams, history, config);
 	logd
 		<< "[DESPOT::ConstructTree] END - Initializing lower and upper bounds at the root node.";
 
@@ -146,11 +148,11 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 	int num_trials = 0;
 	do {
 		double start = clock();
-		VNode* cur = Trial(root, streams, lower_bound, upper_bound, model, history, statistics);
+		VNode* cur = Trial(root, streams, lower_bound, upper_bound, model, history, config, statistics);
 		used_time += double(clock() - start) / CLOCKS_PER_SEC;
 
 		start = clock();
-		Backup(cur);
+		Backup(cur, config);
 		if (statistics != NULL) {
 			statistics->time_backup += double(clock() - start) / CLOCKS_PER_SEC;
 		}
@@ -174,45 +176,46 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 }
 
 void DESPOT::Compare() {
-	vector<State*> particles = belief_->Sample(Globals::config.num_scenarios);
+	vector<State*> particles = belief_->Sample(config_.num_scenarios);
 	SearchStatistics statistics;
 
-	RandomStreams streams = RandomStreams(Globals::config.num_scenarios,
-		Globals::config.search_depth);
+	RandomStreams streams = RandomStreams(config_.num_scenarios,
+		config_.search_depth);
 
 	VNode* root = ConstructTree(particles, streams, lower_bound_, upper_bound_,
-		model_, history_, Globals::config.time_per_move, &statistics);
+		model_, history_, config_.time_per_move, config_, &statistics);
 
-	CheckDESPOT(root, root->lower_bound());
-	CheckDESPOTSTAR(root, root->lower_bound());
+	CheckDESPOT(root, root->lower_bound(), config_);
+	CheckDESPOTSTAR(root, root->lower_bound(), config_);
 	delete root;
 }
 
 void DESPOT::InitLowerBound(VNode* vnode, ScenarioLowerBound* lower_bound,
-	RandomStreams& streams, History& history) {
+	RandomStreams& streams, History& history, const Config& config) {
 	streams.position(vnode->depth());
 	ValuedAction move = lower_bound->Value(vnode->particles(), streams, history);
-	move.value *= Globals::Discount(vnode->depth());
+	move.value *= config.Discount(vnode->depth());
 	vnode->default_move(move);
 	vnode->lower_bound(move.value);
 }
 
 void DESPOT::InitUpperBound(VNode* vnode, ScenarioUpperBound* upper_bound,
-	RandomStreams& streams, History& history) {
+	RandomStreams& streams, History& history, const Config& config) {
 	streams.position(vnode->depth());
 	double upper = upper_bound->Value(vnode->particles(), streams, history);
-	vnode->utility_upper_bound = upper * Globals::Discount(vnode->depth());
-	upper = upper * Globals::Discount(vnode->depth()) - Globals::config.pruning_constant;
+	vnode->utility_upper_bound = upper * config.Discount(vnode->depth());
+	upper = upper * config.Discount(vnode->depth()) - config.pruning_constant;
 	vnode->upper_bound(upper);
 }
 
 void DESPOT::InitBounds(VNode* vnode, ScenarioLowerBound* lower_bound,
-	ScenarioUpperBound* upper_bound, RandomStreams& streams, History& history) {
-	InitLowerBound(vnode, lower_bound, streams, history);
-	InitUpperBound(vnode, upper_bound, streams, history);
+	ScenarioUpperBound* upper_bound, RandomStreams& streams, History& history,
+  const Config& config) {
+	InitLowerBound(vnode, lower_bound, streams, history, config);
+	InitUpperBound(vnode, upper_bound, streams, history, config);
 	if (vnode->upper_bound() < vnode->lower_bound()
 		// close gap because no more search can be done on leaf node
-		|| vnode->depth() == Globals::config.search_depth - 1) {
+		|| vnode->depth() == config.search_depth - 1) {
 		vnode->upper_bound(vnode->lower_bound());
 	}
 }
@@ -222,20 +225,20 @@ ValuedAction DESPOT::Search() {
 		model_->PrintBelief(*belief_);
 	}
 
-	if (Globals::config.time_per_move <= 0) // Return a random action if no time is allocated for planning
+	if (config_.time_per_move <= 0) // Return a random action if no time is allocated for planning
 		return ValuedAction(Random::RANDOM.NextInt(model_->NumActions()),
 			Globals::NEG_INFTY);
 
 	double start = get_time_second();
-	vector<State*> particles = belief_->Sample(Globals::config.num_scenarios);
+	vector<State*> particles = belief_->Sample(config_.num_scenarios);
 	logi << "[DESPOT::Search] Time for sampling " << particles.size()
 		<< " particles: " << (get_time_second() - start) << "s" << endl;
 
 	statistics_ = SearchStatistics();
 
 	start = get_time_second();
-	static RandomStreams streams = RandomStreams(Globals::config.num_scenarios,
-		Globals::config.search_depth);
+	static RandomStreams streams = RandomStreams(config_.num_scenarios,
+		config_.search_depth);
 
 	LookaheadUpperBound* ub = dynamic_cast<LookaheadUpperBound*>(upper_bound_);
 	if (ub != NULL) { // Avoid using new streams for LookaheadUpperBound
@@ -246,14 +249,14 @@ ValuedAction DESPOT::Search() {
 			initialized = true;
 		}
 	} else {
-		streams = RandomStreams(Globals::config.num_scenarios,
-			Globals::config.search_depth);
+		streams = RandomStreams(config_.num_scenarios,
+			config_.search_depth);
 		lower_bound_->Init(streams);
 		upper_bound_->Init(streams);
 	}
 
 	root_ = ConstructTree(particles, streams, lower_bound_, upper_bound_,
-		model_, history_, Globals::config.time_per_move, &statistics_);
+		model_, history_, config_.time_per_move, config_, &statistics_);
 	logi << "[DESPOT::Search] Time for tree construction: "
 		<< (get_time_second() - start) << "s" << endl;
 
@@ -274,7 +277,8 @@ ValuedAction DESPOT::Search() {
 	return astar;
 }
 
-double DESPOT::CheckDESPOT(const VNode* vnode, double regularized_value) {
+double DESPOT::CheckDESPOT(const VNode* vnode, double regularized_value,
+                           const Config& config) {
 	cout
 		<< "--------------------------------------------------------------------------------"
 		<< endl;
@@ -286,33 +290,33 @@ double DESPOT::CheckDESPOT(const VNode* vnode, double regularized_value) {
 	}
 	VNode* root = new VNode(copy);
 
-	double pruning_constant = Globals::config.pruning_constant;
-	Globals::config.pruning_constant = 0;
+	double pruning_constant = config_.pruning_constant;
+	config_.pruning_constant = 0;
 
-	RandomStreams streams = RandomStreams(Globals::config.num_scenarios,
-		Globals::config.search_depth);
+	RandomStreams streams = RandomStreams(config_.num_scenarios,
+		config_.search_depth);
 
 	streams.position(0);
-	InitBounds(root, lower_bound_, upper_bound_, streams, history_);
+	InitBounds(root, lower_bound_, upper_bound_, streams, history_, config);
 
 	double used_time = 0;
 	int num_trials = 0, prev_num = 0;
 	double pruned_value;
 	do {
 		double start = clock();
-		VNode* cur = Trial(root, streams, lower_bound_, upper_bound_, model_, history_);
+		VNode* cur = Trial(root, streams, lower_bound_, upper_bound_, model_, history_, config);
 		num_trials++;
 		used_time += double(clock() - start) / CLOCKS_PER_SEC;
 
 		start = clock();
-		Backup(cur);
+		Backup(cur, config);
 		used_time += double(clock() - start) / CLOCKS_PER_SEC;
 
 		if (double(num_trials - prev_num) > 0.05 * prev_num) {
 			int pruned_action;
-			Globals::config.pruning_constant = pruning_constant;
-			VNode* pruned = Prune(root, pruned_action, pruned_value);
-			Globals::config.pruning_constant = 0;
+			config_.pruning_constant = pruning_constant;
+			VNode* pruned = Prune(root, pruned_action, pruned_value, config);
+			config_.pruning_constant = 0;
 			prev_num = num_trials;
 
 			pruned->Free(*model_);
@@ -333,7 +337,7 @@ double DESPOT::CheckDESPOT(const VNode* vnode, double regularized_value) {
 		<< regularized_value << ", current = " << pruned_value << ", l = "
 		<< root->lower_bound() << ", u = " << root->upper_bound() << "; time = "
 		<< used_time << endl;
-	Globals::config.pruning_constant = pruning_constant;
+	config_.pruning_constant = pruning_constant;
 	cout
 		<< "--------------------------------------------------------------------------------"
 		<< endl;
@@ -344,7 +348,8 @@ double DESPOT::CheckDESPOT(const VNode* vnode, double regularized_value) {
 	return used_time;
 }
 
-double DESPOT::CheckDESPOTSTAR(const VNode* vnode, double regularized_value) {
+double DESPOT::CheckDESPOTSTAR(const VNode* vnode, double regularized_value,
+                               const Config& config) {
 	cout
 		<< "--------------------------------------------------------------------------------"
 		<< endl;
@@ -356,20 +361,20 @@ double DESPOT::CheckDESPOTSTAR(const VNode* vnode, double regularized_value) {
 	}
 	VNode* root = new VNode(copy);
 
-	RandomStreams streams = RandomStreams(Globals::config.num_scenarios,
-		Globals::config.search_depth);
-	InitBounds(root, lower_bound_, upper_bound_, streams, history_);
+	RandomStreams streams = RandomStreams(config.num_scenarios,
+		config.search_depth);
+	InitBounds(root, lower_bound_, upper_bound_, streams, history_, config);
 
 	double used_time = 0;
 	int num_trials = 0;
 	do {
 		double start = clock();
-		VNode* cur = Trial(root, streams, lower_bound_, upper_bound_, model_, history_);
+		VNode* cur = Trial(root, streams, lower_bound_, upper_bound_, model_, history_, config);
 		num_trials++;
 		used_time += double(clock() - start) / CLOCKS_PER_SEC;
 
 		start = clock();
-		Backup(cur);
+		Backup(cur, config);
 		used_time += double(clock() - start) / CLOCKS_PER_SEC;
 	} while (root->lower_bound() < regularized_value);
 
@@ -387,7 +392,7 @@ double DESPOT::CheckDESPOTSTAR(const VNode* vnode, double regularized_value) {
 	return used_time;
 }
 
-VNode* DESPOT::Prune(VNode* vnode, int& pruned_action, double& pruned_value) {
+VNode* DESPOT::Prune(VNode* vnode, int& pruned_action, double& pruned_value, const Config& config) {
 	vector<State*> empty;
 	VNode* pruned_v = new VNode(empty, vnode->depth(), NULL,
 		vnode->edge());
@@ -399,7 +404,7 @@ VNode* DESPOT::Prune(VNode* vnode, int& pruned_action, double& pruned_value) {
 	for (int i = 0; i < children.size(); i++) {
 		QNode* qnode = children[i];
 		double nu;
-		QNode* pruned_q = Prune(qnode, nu);
+		QNode* pruned_q = Prune(qnode, nu, config);
 
 		if (nu > nustar) {
 			nustar = nu;
@@ -433,15 +438,15 @@ VNode* DESPOT::Prune(VNode* vnode, int& pruned_action, double& pruned_value) {
 	return pruned_v;
 }
 
-QNode* DESPOT::Prune(QNode* qnode, double& pruned_value) {
+QNode* DESPOT::Prune(QNode* qnode, double& pruned_value, const Config& config) {
 	QNode* pruned_q = new QNode((VNode*) NULL, qnode->edge());
-	pruned_value = qnode->step_reward - Globals::config.pruning_constant;
+	pruned_value = qnode->step_reward - config.pruning_constant;
 	map<OBS_TYPE, VNode*>& children = qnode->children();
 	for (map<OBS_TYPE, VNode*>::iterator it = children.begin();
 		it != children.end(); it++) {
 		int astar;
 		double nu;
-		VNode* pruned_v = Prune(it->second, astar, nu);
+		VNode* pruned_v = Prune(it->second, astar, nu, config);
 		if (nu == it->second->default_move().value) {
 			delete pruned_v;
 		} else {
@@ -477,8 +482,8 @@ double DESPOT::Gap(VNode* vnode) {
 	return (vnode->upper_bound() - vnode->lower_bound());
 }
 
-double DESPOT::WEU(VNode* vnode) {
-	return WEU(vnode, Globals::config.xi);
+double DESPOT::WEU(VNode* vnode, const Config& config) {
+	return WEU(vnode, config.xi);
 }
 
 // Can pass root as an argument, but will not affect performance much
@@ -490,7 +495,7 @@ double DESPOT::WEU(VNode* vnode, double xi) {
 	return Gap(vnode) - xi * vnode->Weight() * Gap(root);
 }
 
-VNode* DESPOT::SelectBestWEUNode(QNode* qnode) {
+VNode* DESPOT::SelectBestWEUNode(QNode* qnode, const Config& config) {
 	double weustar = Globals::NEG_INFTY;
 	VNode* vstar = NULL;
 	map<OBS_TYPE, VNode*>& children = qnode->children();
@@ -498,7 +503,7 @@ VNode* DESPOT::SelectBestWEUNode(QNode* qnode) {
 		it != children.end(); it++) {
 		VNode* vnode = it->second;
 
-		double weu = WEU(vnode);
+		double weu = WEU(vnode, config);
 		if (weu >= weustar) {
 			weustar = weu;
 			vstar = vnode->vstar;
@@ -550,11 +555,11 @@ void DESPOT::Update(VNode* vnode) {
 	}
 }
 
-void DESPOT::Update(QNode* qnode) {
+void DESPOT::Update(QNode* qnode, const Config& config) {
 	double lower = qnode->step_reward;
 	double upper = qnode->step_reward;
 	double utility_upper = qnode->step_reward
-		+ Globals::config.pruning_constant;
+		+ config.pruning_constant;
 
 	map<OBS_TYPE, VNode*>& children = qnode->children();
 	for (map<OBS_TYPE, VNode*>::iterator it = children.begin();
@@ -577,7 +582,7 @@ void DESPOT::Update(QNode* qnode) {
 	}
 }
 
-void DESPOT::Backup(VNode* vnode) {
+void DESPOT::Backup(VNode* vnode, const Config& config) {
 	int iter = 0;
 	logd << "- Backup " << vnode << " at depth " << vnode->depth() << endl;
 	while (true) {
@@ -590,7 +595,7 @@ void DESPOT::Backup(VNode* vnode) {
 			break;
 		}
 
-		Update(parentq);
+		Update(parentq, config);
 		logd << " Updated Q-node to (" << parentq->lower_bound() << ", "
 			<< parentq->upper_bound() << ")" << endl;
 
@@ -600,11 +605,11 @@ void DESPOT::Backup(VNode* vnode) {
 	logd << "* Backup complete!" << endl;
 }
 
-VNode* DESPOT::FindBlocker(VNode* vnode) {
+VNode* DESPOT::FindBlocker(VNode* vnode, const Config& config) {
 	VNode* cur = vnode;
 	int count = 1;
 	while (cur != NULL) {
-		if (cur->utility_upper_bound - count * Globals::config.pruning_constant
+		if (cur->utility_upper_bound - count * config.pruning_constant
 			<= cur->default_move().value) {
 			break;
 		}
@@ -621,7 +626,7 @@ VNode* DESPOT::FindBlocker(VNode* vnode) {
 void DESPOT::Expand(VNode* vnode,
 	ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
 	const DSPOMDP* model, RandomStreams& streams,
-	History& history) {
+	History& history, const Config& config) {
 	vector<QNode*>& children = vnode->children();
 	logd << "- Expanding vnode " << vnode << endl;
 	for (int action = 0; action < model->NumActions(); action++) {
@@ -629,15 +634,14 @@ void DESPOT::Expand(VNode* vnode,
 		QNode* qnode = new QNode(vnode, action);
 		children.push_back(qnode);
 
-		Expand(qnode, lower_bound, upper_bound, model, streams, history);
+		Expand(qnode, lower_bound, upper_bound, model, streams, history, config);
 	}
 	logd << "* Expansion complete!" << endl;
 }
 
 void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 	ScenarioUpperBound* ub, const DSPOMDP* model,
-	RandomStreams& streams,
-	History& history) {
+	RandomStreams& streams, History& history, const Config& config) {
 	VNode* parent = qnode->parent();
 	streams.position(parent->depth());
 	map<OBS_TYPE, VNode*>& children = qnode->children();
@@ -672,8 +676,8 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 			model->Free(copy);
 		}
 	}
-	step_reward = Globals::Discount(parent->depth()) * step_reward
-		- Globals::config.pruning_constant;//pruning_constant is used for regularization
+	step_reward = config.Discount(parent->depth()) * step_reward
+		- config.pruning_constant;//pruning_constant is used for regularization
 
 	double lower_bound = step_reward;
 	double upper_bound = step_reward;
@@ -689,7 +693,7 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 		children[obs] = vnode;
 
 		history.Add(qnode->edge(), obs);
-		InitBounds(vnode, lb, ub, streams, history);
+		InitBounds(vnode, lb, ub, streams, history, config);
 		history.RemoveLast();
 		logd << " New node's bounds: (" << vnode->lower_bound() << ", "
 			<< vnode->upper_bound() << ")" << endl;
@@ -701,13 +705,13 @@ void DESPOT::Expand(QNode* qnode, ScenarioLowerBound* lb,
 	qnode->step_reward = step_reward;
 	qnode->lower_bound(lower_bound);
 	qnode->upper_bound(upper_bound);
-	qnode->utility_upper_bound = upper_bound + Globals::config.pruning_constant;
+	qnode->utility_upper_bound = upper_bound + config.pruning_constant;
 
 	qnode->default_value = lower_bound; // for debugging
 }
 
 ValuedAction DESPOT::Evaluate(VNode* root, vector<State*>& particles,
-	RandomStreams& streams, POMCPPrior* prior, const DSPOMDP* model) {
+	RandomStreams& streams, POMCPPrior* prior, const DSPOMDP* model, const Config& config) {
 	double value = 0;
 
 	for (int i = 0; i < particles.size(); i++) {
@@ -735,7 +739,7 @@ ValuedAction DESPOT::Evaluate(VNode* root, vector<State*>& particles,
 				action, reward, obs);
 
 			val += discount * reward;
-			discount *= Globals::Discount();
+			discount *= config.Discount();
 
 			if (!terminal) {
 				prior->Add(action, obs);

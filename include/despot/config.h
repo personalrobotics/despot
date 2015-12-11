@@ -33,6 +33,14 @@ struct Config {
 		noise(0.1),
 		silence(false) {
 	}
+
+  inline double Discount() const {
+    return discount;
+  }
+
+  inline double Discount(int d) const {
+    return std::pow(discount, d);
+  }
 };
 
 } // namespace despot
