@@ -33,6 +33,8 @@ public:
 	ScenarioLowerBound* lower_bound() const;
 	ScenarioUpperBound* upper_bound() const;
 
+	const SearchStatistics& statistics() const;
+
 	static VNode* ConstructTree(std::vector<State*>& particles, RandomStreams& streams,
 		ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
 		const DSPOMDP* model, History& history, double timeout,

@@ -24,6 +24,10 @@ ScenarioUpperBound* DESPOT::upper_bound() const {
 	return upper_bound_;
 }
 
+const SearchStatistics& DESPOT::statistics() const {
+	return statistics_;
+}
+
 VNode* DESPOT::Trial(VNode* root, RandomStreams& streams,
 	ScenarioLowerBound* lower_bound, ScenarioUpperBound* upper_bound,
 	const DSPOMDP* model, History& history, SearchStatistics* statistics) {
