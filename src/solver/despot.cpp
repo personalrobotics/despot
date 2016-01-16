@@ -158,6 +158,7 @@ VNode* DESPOT::ConstructTree(vector<State*>& particles, RandomStreams& streams,
 
 		num_trials++;
 	} while (used_time * (num_trials + 1.0) / num_trials < timeout
+		&& (Globals::config.max_num_trials < 0 || num_trials < Globals::config.max_num_trials)
 		&& (root->upper_bound() - root->lower_bound()) > 1e-6);
 
 	if (statistics != NULL) {
